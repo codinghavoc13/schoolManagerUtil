@@ -13,7 +13,8 @@ import java.io.FileNotFoundException;
 
 public class PopulateSchoolManager {
     public record AddressUserPair(Long address_id, Long user_id) {}
-    public record CourseInfo(Long courseId, String courseName, int period, double credit, int teacherSlot) {}
+    public record CourseInfo(Long courseId, String courseName, double credit, String courseBlock) {}
+    public record CPTInfo(int cptId, int courseId, int period, int teacherId){}
     public record ParentStudentPair(Long parent_id, Long student_id, String relation) {}
     public record UserPair(Long user1, Long user2) {}
 
@@ -22,7 +23,7 @@ public class PopulateSchoolManager {
     /** Number of super administrator accounts to create. */
     private static int NUM_SU = 1;
     /** Number of teacher accounts to create.*/
-    private static int NUM_TEACHERS = 28;
+    private static int NUM_TEACHERS = 32;
     private static LocalDate START_OF_SCHOOL_YEAR = LocalDate.of(2024, 8, 19);
     /** Sum total of super and normal admin and teachers to create. */
     private static int TOTAL_NUM_STAFF = NUM_SU + NUM_ADM + NUM_TEACHERS;
@@ -48,6 +49,7 @@ public class PopulateSchoolManager {
     private static ArrayList<String> apartmentStreetNames = new ArrayList<>(Arrays.asList("West Montana St",
         "East Washington Place", "West Oregon Ave", "East California Dr"));
     private static ArrayList<CourseInfo> courses = new ArrayList<>();
+    private static ArrayList<CPTInfo> cptList = new ArrayList<>();
     private static ArrayList<String> firstNames = new ArrayList<>();
     private static ArrayList<String> gradeLevels = new ArrayList<>(
         Arrays.asList("K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"));
@@ -76,7 +78,7 @@ public class PopulateSchoolManager {
             buildParentAddressInsertStatement();
             generateAssignments();
             generateCourses();
-            generateCourseTeacher();
+            generateCoursePeriodTeacher();
             System.out.println("Finished");
         }
     }
@@ -421,13 +423,11 @@ public class PopulateSchoolManager {
 
     private static void generateCourses() {
         readCoursesFromFile();
-        // INSERT INTO school_manager.course(course_id, course_length, course_name,
-        // period) VALUES (?, ?, ?, ?);
         StringBuilder sb = new StringBuilder();
         Long courseId = 1l;
         String courseName = "";
         String courseCredit = "";
-        sb.append("INSERT INTO school_manager.course(course_id, course_name, period, credit) VALUES \n");
+        sb.append("INSERT INTO school_manager.course(course_id, course_name, credit, course_block) VALUES \n");
         for (CourseInfo courseInfo : courses) {
             courseName = "'" + courseInfo.courseName + "',";
             courseCredit = String.valueOf(courseInfo.credit);
@@ -435,12 +435,9 @@ public class PopulateSchoolManager {
             sb.append(courseId + ", ");
             courseId++;
             sb.append(courseName);
-            if (courseInfo.period >= 0) {
-                sb.append(" " + courseInfo.period + ", ");
-            } else {
-                sb.append(" null, ");
-            }
-            sb.append(courseCredit + "),\n");
+            sb.append(courseCredit + ", ");
+            
+            sb.append("'" + courseInfo.courseBlock + "'),\n");
         }
 
         String result = sb.toString();
@@ -456,19 +453,27 @@ public class PopulateSchoolManager {
         }
     }
 
-    private static void generateCourseTeacher() {
-        // INSERT INTO school_manager.course_teacher(course_id, teacher_id) VALUES (?, ?)
+    private static void generateCoursePreReq(){
+
+    }
+
+    private static void generateCoursePeriodTeacher() {
+        readCPTFromFile();
         StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO school_manager.course_teacher(course_id, teacher_id) VALUES \n");
-        for(CourseInfo course : courses){
-            sb.append("(" + course.courseId + ", " + teacherIdList.get(course.teacherSlot) + "), \n");
+        // INSERT INTO school_manager.course_period_teacher(ct_id, course_id, period, teacher_id) VALUES (?, ?, ?, ?);
+        sb.append("INSERT INTO school_manager.course_period_teacher(cpt_id, course_id, period, teacher_id) VALUES \n");
+        for(CPTInfo cpt : cptList){
+            sb.append("(" + cpt.cptId + ", ");
+            sb.append(cpt.courseId + ", ");
+            sb.append(cpt.period + ", ");
+            sb.append(teacherIdList.get(cpt.teacherId) + "), \n");
         }
         String result = sb.toString();
         result = result.substring(0, result.lastIndexOf(")") + 1);
 
         FileWriter writer;
         try {
-            writer = new FileWriter("output/buildCourseTeacher.sql");
+            writer = new FileWriter("output/buildCoursePeriodTeacher.sql");
             writer.write(result);
             writer.close();
         } catch (IOException e) {
@@ -566,21 +571,46 @@ public class PopulateSchoolManager {
     }
 
     private static void readCoursesFromFile(){
-        Long courseId = 1L;
+        Long courseId = 1l;
         String line = "";
         String courseName = "";
-        int period;
         double credit;
-        int teacherSlot;
         try {
             BufferedReader br = new BufferedReader(new FileReader("resources/courses.csv"));
             while((line = br.readLine()) != null){
                 String[] arr = line.split(",");
                 courseName = arr[0];
-                period = Integer.valueOf(arr[1]);
-                credit = Double.valueOf(arr[2]);
-                teacherSlot = Integer.valueOf(arr[3]);
-                courses.add(new CourseInfo(courseId++, courseName, period, credit, teacherSlot));
+                credit = Double.valueOf(arr[1]);
+                if(credit == 0.5){
+                    courses.add(new CourseInfo(courseId++, courseName, credit, "FALL_SEMESTER"));
+                    courses.add(new CourseInfo(courseId++, courseName, credit, "SPRING_SEMESTER"));
+                } else {
+                    courses.add(new CourseInfo(courseId++, courseName, credit, "FULL_YEAR"));
+                }
+                
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void readCPTFromFile(){
+        int courseId = 1;
+        String line = "";
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("resources/cpt.csv"));
+            while((line = br.readLine()) != null){
+                if(line.indexOf(",") == -1){
+                    // System.out.println(line);
+                    //these are comments for my own sanity
+                } else {
+                    String[] arr = line.split(",");
+                    cptList.add(new CPTInfo(courseId++, Integer.parseInt(arr[0]),
+                    Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
+                }
             }
             br.close();
         } catch (FileNotFoundException e) {
@@ -616,8 +646,9 @@ public class PopulateSchoolManager {
     }
 
     private static void testRunner() {
-        readNamesFromFile();
-        System.out.println(lastNames.size());
+        // generateCourses();
+        // readCPTFromFile();
+        generateCoursePeriodTeacher();
     }
 
     // private static boolean checkUserPairs(UserPair up1, UserPair up2){
