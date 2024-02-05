@@ -1,0 +1,16 @@
+15 'German 1' none
+16 'German 2' needs 15
+17 'German 3' needs 16
+18 'Spanish 1' none
+19 'Spanish 2' needs 18
+20 'Spanish 3' needs 19
+21 'French 1' none
+22 'French 2' needs 21
+23 'French 3' needs 22
+course_id prereq_id
+16,15
+17,16
+19,18
+20,19
+22,21
+23,22

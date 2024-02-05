@@ -14,6 +14,7 @@ import java.io.FileNotFoundException;
 public class PopulateSchoolManager {
     public record AddressUserPair(Long address_id, Long user_id) {}
     public record CourseInfo(Long courseId, String courseName, double credit, String courseBlock) {}
+    public record CoursePreReqPair(Long courseId, Long prereqId){}
     public record CPTInfo(int cptId, int courseId, int period, int teacherId){}
     public record ParentStudentPair(Long parent_id, Long student_id, String relation) {}
     public record UserPair(Long user1, Long user2) {}
@@ -49,6 +50,7 @@ public class PopulateSchoolManager {
     private static ArrayList<String> apartmentStreetNames = new ArrayList<>(Arrays.asList("West Montana St",
         "East Washington Place", "West Oregon Ave", "East California Dr"));
     private static ArrayList<CourseInfo> courses = new ArrayList<>();
+    private static ArrayList<CoursePreReqPair> coursePreReqList = new ArrayList<>();
     private static ArrayList<CPTInfo> cptList = new ArrayList<>();
     private static ArrayList<String> firstNames = new ArrayList<>();
     private static ArrayList<String> gradeLevels = new ArrayList<>(
@@ -66,8 +68,8 @@ public class PopulateSchoolManager {
     }    
 
     public static void start() {
-        // boolean test = true;
-        boolean test = false;
+        boolean test = true;
+        // boolean test = false;
         if (test) {
             testRunner();
         } else {
@@ -454,7 +456,27 @@ public class PopulateSchoolManager {
     }
 
     private static void generateCoursePreReq(){
+        // INSERT INTO school_manager.course_pre_req(course_id, prereq_id) VALUES (?, ?, ?);
+        readCoursePreReqsFromFile();
+        StringBuilder sb = new StringBuilder();
+        sb.append("INSERT INTO school_manager.course_pre_req(course_id, prereq_id) VALUES \n");
 
+        for(CoursePreReqPair cprp : coursePreReqList){
+            sb.append("(" + cprp.courseId + ", ");
+            sb.append(cprp.prereqId + "),\n");
+        }
+
+        String result = sb.toString();
+        result = result.substring(0, result.lastIndexOf(")") + 1);
+
+        FileWriter writer;
+        try {
+            writer = new FileWriter("output/buildCoursePreReq.sql");
+            writer.write(result);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void generateCoursePeriodTeacher() {
@@ -597,16 +619,30 @@ public class PopulateSchoolManager {
         }
     }
 
+    private static void readCoursePreReqsFromFile(){
+        String line = "";
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("resources/coursePreReq.csv"));
+            while((line = br.readLine()) != null){
+                if(line.indexOf(",")> -1){
+                    String[] arr = line.split(",");
+                    coursePreReqList.add(new CoursePreReqPair(Long.parseLong(arr[0]), Long.parseLong(arr[1])));
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void readCPTFromFile(){
         int courseId = 1;
         String line = "";
         try {
             BufferedReader br = new BufferedReader(new FileReader("resources/cpt.csv"));
             while((line = br.readLine()) != null){
-                if(line.indexOf(",") == -1){
-                    // System.out.println(line);
-                    //these are comments for my own sanity
-                } else {
+                if(line.indexOf(",") > -1){
                     String[] arr = line.split(",");
                     cptList.add(new CPTInfo(courseId++, Integer.parseInt(arr[0]),
                     Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
@@ -648,7 +684,12 @@ public class PopulateSchoolManager {
     private static void testRunner() {
         // generateCourses();
         // readCPTFromFile();
-        generateCoursePeriodTeacher();
+        // generateCoursePeriodTeacher();
+        // readCoursePreReqsFromFile();
+        // for(CoursePreReqPair cprp : coursePreReqList){
+        //     System.out.println(cprp.courseId + " _ " + cprp.prereqId);
+        // }
+        generateCoursePreReq();
     }
 
     // private static boolean checkUserPairs(UserPair up1, UserPair up2){
