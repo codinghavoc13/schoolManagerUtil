@@ -13,9 +13,11 @@ import java.io.FileNotFoundException;
 
 public class PopulateSchoolManager {
     public record AddressUserPair(Long address_id, Long user_id) {}
-    public record CourseInfo(Long courseId, String courseName, double credit, String courseBlock) {}
+    // public record CourseInfo(Long courseId, String courseName, double credit, String courseBlock) {}
+    public record CourseInfo(String courseName, double credit, String courseBlock) {}
     public record CoursePreReqPair(Long courseId, Long prereqId){}
-    public record CPTInfo(int cptId, int courseId, int period, int teacherId){}
+    // public record CPTInfo(int cptId, int courseId, int period, int teacherId){}
+    public record CPTInfo(int courseId, int period, int teacherId){}
     public record ParentStudentPair(Long parent_id, Long student_id, String relation) {}
     public record UserPair(Long user1, Long user2) {}
 
@@ -68,8 +70,8 @@ public class PopulateSchoolManager {
     }    
 
     public static void start() {
-        boolean test = true;
-        // boolean test = false;
+        // boolean test = true;
+        boolean test = false;
         if (test) {
             testRunner();
         } else {
@@ -132,7 +134,7 @@ public class PopulateSchoolManager {
         String[] pw = PasswordHashUtil.hashPWWPBKDF("password");
 
         sb.append("(");
-        sb.append(userId + ", ");// user_id
+        // sb.append(userId + ", ");// user_id
         sb.append("'" + firstName + "', ");// first_name
         sb.append("'" + lastName + "', ");// last_name
         sb.append(grade);// grade
@@ -176,12 +178,13 @@ public class PopulateSchoolManager {
     private static void buildRelationshipInsertStatements() {
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO school_manager.relationships(");
-        sb.append("relation_id, student_id, relative_id, relationship) ");
+        // sb.append("relation_id, student_id, relative_id, relationship) ");
+        sb.append("student_id, relative_id, relationship) ");
         sb.append("VALUES \n");
         for (ParentStudentPair ps : parentStudentList) {
             sb.append("(");
-            sb.append(relationshipId + ", ");
-            relationshipId++;
+            // sb.append(relationshipId + ", ");
+            // relationshipId++;
             sb.append(ps.student_id + ", ");// student_id
             sb.append(ps.parent_id + ", ");// relative_id
             sb.append("'" + ps.relation + "'),\n");
@@ -214,8 +217,8 @@ public class PopulateSchoolManager {
     private static void buildUserInsertStatements() {
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO school_manager.users(");
-        sb.append(
-                "user_id, first_name, last_name, grade_level, phone, pw_hash, pw_salt, role, school_student_id, username, verified, email_string) ");
+        // sb.append("user_id, first_name, last_name, grade_level, phone, pw_hash, pw_salt, role, school_student_id, username, verified, email_string) ");
+        sb.append("first_name, last_name, grade_level, phone, pw_hash, pw_salt, role, school_student_id, username, verified, email_string) ");
         sb.append("VALUES \n");
         String firstName = "";
         String lastName = "";
@@ -354,7 +357,13 @@ public class PopulateSchoolManager {
             addressList.put(addressId, arr);
         }
     }
-
+    
+    /*
+     * TODO May need to rework this an all other methods that explicitly set the <object>_id since this
+     * appears to be causing a issue where the auto increment value isn't being updated correctly. This
+     * is working for dropping bulk data but, in this case, when I try to add an assignment via the portal,
+     * the auto id is starting at 1; also need to throw in some reports
+     */
     private static void generateAssignments() {
         LocalDate date = START_OF_SCHOOL_YEAR;
         Long assignmentId = 1l;
@@ -364,16 +373,21 @@ public class PopulateSchoolManager {
         int hwCtr = 1;
         int quizCtr = 1;
         int testCtr = 1;
+        //TODO need to add reports
+        int rptCtr = 1;
         boolean build = true;
         // INSERT INTO school_manager.assignment(assignment_id, teacher_id,
         // assignment_title, assignment_type, assignment_due_date) VALUES (?, ?, ?, ?,
         // ?);
+        // sb.append("INSERT INTO school_manager.assignment"
+        //         + "(assignment_id, teacher_id, assignment_title, assignment_type, assignment_due_date) VALUES \n");
         sb.append("INSERT INTO school_manager.assignment"
-                + "(assignment_id, teacher_id, assignment_title, assignment_type, assignment_due_date) VALUES \n");
+                + "(teacher_id, assignment_title, assignment_type, assignment_due_date) VALUES \n");
         for (Long teacherId : teacherIdList) {
             // reset the date at the beginning of each run or else the due date gets really
             // far out
             date = START_OF_SCHOOL_YEAR;
+            System.out.println("----------new run----------");
             for (int i = 0; i < 60; i++) {
                 switch (date.getDayOfWeek()) {
                     case DayOfWeek.MONDAY:
@@ -389,9 +403,18 @@ public class PopulateSchoolManager {
                         quizCtr++;
                         break;
                     case DayOfWeek.FRIDAY:
-                        type = "'TEST', ";
-                        title = "'Test" + " " + testCtr + "', ";
-                        testCtr++;
+                        //TODO add a check to put a report due every 3 weeks (test, test, report)
+                        if(i%3==0){
+                            System.out.println("third");
+                            type = "'REPORT', ";
+                            title = "'Report " + rptCtr + "', ";
+                            rptCtr++;
+                        } else {
+                            // System.out.println("not third");
+                            type = "'TEST', ";
+                            title = "'Test" + " " + testCtr + "', ";
+                            testCtr++;
+                        }
                         break;
                     default:
                         build = false;
@@ -399,8 +422,8 @@ public class PopulateSchoolManager {
                 }
                 if (build) {
                     sb.append("(");
-                    sb.append(assignmentId + ", ");
-                    assignmentId++;
+                    // sb.append(assignmentId + ", ");
+                    // assignmentId++;
                     sb.append(teacherId + ", ");
                     sb.append(title);
                     sb.append(type);
@@ -423,19 +446,25 @@ public class PopulateSchoolManager {
         }
     }
 
+    /*
+     * TODO - I did not update this with the cpt table updates, need to make some massive changes
+     * - Need to first create the entries for the courses: id, block, name, credit
+     * - Teachers need to be generated and put in the list
+     * - Then need to read from a new file the pairings of course id, teacher id, period
+     */
     private static void generateCourses() {
         readCoursesFromFile();
         StringBuilder sb = new StringBuilder();
-        Long courseId = 1l;
+        // Long courseId = 1l;
         String courseName = "";
         String courseCredit = "";
-        sb.append("INSERT INTO school_manager.course(course_id, course_name, credit, course_block) VALUES \n");
+        sb.append("INSERT INTO school_manager.course(course_name, credit, course_block) VALUES \n");
         for (CourseInfo courseInfo : courses) {
             courseName = "'" + courseInfo.courseName + "',";
             courseCredit = String.valueOf(courseInfo.credit);
             sb.append("(");
-            sb.append(courseId + ", ");
-            courseId++;
+            // sb.append(courseId + ", ");
+            // courseId++;
             sb.append(courseName);
             sb.append(courseCredit + ", ");
             
@@ -483,9 +512,11 @@ public class PopulateSchoolManager {
         readCPTFromFile();
         StringBuilder sb = new StringBuilder();
         // INSERT INTO school_manager.course_period_teacher(ct_id, course_id, period, teacher_id) VALUES (?, ?, ?, ?);
-        sb.append("INSERT INTO school_manager.course_period_teacher(cpt_id, course_id, period, teacher_id) VALUES \n");
+        // sb.append("INSERT INTO school_manager.course_period_teacher(cpt_id, course_id, period, teacher_id) VALUES \n");
+        sb.append("INSERT INTO school_manager.course_period_teacher(course_id, period, teacher_id) VALUES \n");
         for(CPTInfo cpt : cptList){
-            sb.append("(" + cpt.cptId + ", ");
+            // sb.append("(" + cpt.cptId + ", ");
+            sb.append("(");
             sb.append(cpt.courseId + ", ");
             sb.append(cpt.period + ", ");
             sb.append(teacherIdList.get(cpt.teacherId) + "), \n");
@@ -593,7 +624,7 @@ public class PopulateSchoolManager {
     }
 
     private static void readCoursesFromFile(){
-        Long courseId = 1l;
+        // Long courseId = 1l;
         String line = "";
         String courseName = "";
         double credit;
@@ -601,15 +632,23 @@ public class PopulateSchoolManager {
             BufferedReader br = new BufferedReader(new FileReader("resources/courses.csv"));
             while((line = br.readLine()) != null){
                 String[] arr = line.split(",");
-                courseName = arr[0];
-                credit = Double.valueOf(arr[1]);
-                if(credit == 0.5){
-                    courses.add(new CourseInfo(courseId++, courseName, credit, "FALL_SEMESTER"));
-                    courses.add(new CourseInfo(courseId++, courseName, credit, "SPRING_SEMESTER"));
-                } else {
-                    courses.add(new CourseInfo(courseId++, courseName, credit, "FULL_YEAR"));
+                if(arr.length>1){
+                    //ignore column 0, this is a id value for reference
+                    courseName = arr[1];
+                    credit = Double.valueOf(arr[2]);
+                    // if(credit == 0.5){
+                    //     courses.add(new CourseInfo(courseId++, courseName, credit, "FALL_SEMESTER"));
+                    //     courses.add(new CourseInfo(courseId++, courseName, credit, "SPRING_SEMESTER"));
+                    // } else {
+                    //     courses.add(new CourseInfo(courseId++, courseName, credit, "FULL_YEAR"));
+                    // }
+                    if(credit == 0.5){
+                        courses.add(new CourseInfo(courseName, credit, "FALL_SEMESTER"));
+                        courses.add(new CourseInfo(courseName, credit, "SPRING_SEMESTER"));
+                    } else {
+                        courses.add(new CourseInfo(courseName, credit, "FULL_YEAR"));
+                    }
                 }
-                
             }
             br.close();
         } catch (FileNotFoundException e) {
@@ -637,14 +676,16 @@ public class PopulateSchoolManager {
     }
 
     private static void readCPTFromFile(){
-        int courseId = 1;
+        // int courseId = 1;
         String line = "";
         try {
             BufferedReader br = new BufferedReader(new FileReader("resources/cpt.csv"));
             while((line = br.readLine()) != null){
                 if(line.indexOf(",") > -1){
                     String[] arr = line.split(",");
-                    cptList.add(new CPTInfo(courseId++, Integer.parseInt(arr[0]),
+                    // cptList.add(new CPTInfo(courseId++, Integer.parseInt(arr[0]),
+                    // Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
+                    cptList.add(new CPTInfo(Integer.parseInt(arr[0]),
                     Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
                 }
             }

@@ -1,5 +1,4 @@
-# do not use commas for comments #
-# courseId period teacherId #
+# do not use commas for comments: courseId period teacherId #
 # K-6 #
 1,0,0
 1,0,1

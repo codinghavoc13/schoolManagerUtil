@@ -1,0 +1,3 @@
+courses
+- create generate generic named core courses (english, science, social studies, math) using numerical sequence (101 = 7th grade, 201 = 8th grade, etc)
+- create ultra generic electives also using a numerical sequence (XXXX 101 - XXXX 104)
