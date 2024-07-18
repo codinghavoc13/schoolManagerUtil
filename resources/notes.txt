@@ -1,3 +1,21 @@
 courses
 - create generate generic named core courses (english, science, social studies, math) using numerical sequence (101 = 7th grade, 201 = 8th grade, etc)
 - create ultra generic electives also using a numerical sequence (XXXX 101 - XXXX 104)
+- english, science, math, social studies will have a 100-600 level (7th-12th grade) each with one teacher that teaches the same course all year
+- world languages have four levels (101-104) available at any grade level that are half semester each; one teacher teaches each language; 101 and 103 are fall semester courses, 102 and 104 are spring semester courses
+- half semester electives will follow similar suit, one teacher covers both the fall and spring semester, 101 is fall and 102 is spring
+homeroom in courses
+8,Homeroom,0,FULL_YEAR,7th grade
+9,Homeroom,0,FULL_YEAR,8th grade
+10,Homeroom,0,FULL_YEAR,9th grade
+11,Homeroom,0,FULL_YEAR,10th grade
+12,Homeroom,0,FULL_YEAR,11th grade
+13,Homeroom,0,FULL_YEAR,12th grade
+
+homeroom in cpt
+8,0,-1
+9,0,-1
+10,0,-1
+11,0,-1
+12,0,-1
+13,0,-1

@@ -1,16 +1,73 @@
-15 'German 1' none
-16 'German 2' needs 15
-17 'German 3' needs 16
-18 'Spanish 1' none
-19 'Spanish 2' needs 18
-20 'Spanish 3' needs 19
-21 'French 1' none
-22 'French 2' needs 21
-23 'French 3' needs 22
-course_id prereq_id
-16,15
-17,16
-19,18
-20,19
-22,21
-23,22
+course_id prereq_id comment that is ignored by script
+1,-1,kindergarden
+2,1,1st
+3,2,2nd
+4,3,3rd
+5,4,4th
+6,5,5th
+7,6,6th
+8,7,homeroom 7th
+9,8,homeroom 8th
+10,9,homeroom 9th
+11,10,homeroom 10th
+12,11,homeroom 11th
+13,12,homeroom 12th
+14,7,english 100
+15,14,english 200
+16,15,english 300
+17,16,english 400
+18,17,english 500
+19,18,english 600
+20,7,Science 100
+21,20,Science 200
+22,21,Science 300
+23,22,Science 400
+24,23,Science 500
+25,24,Science 600
+# math 6 levels #
+26,7,Math 100
+27,26,Math 200
+28,27,Math 300
+29,28,Math 400
+30,29,Math 500
+31,30,Math 600
+# social studies 6 levels #
+32,7,Social Studies 100
+33,32,Social Studies 200
+34,33,Social Studies 300
+35,34,Social Studies 400
+36,35,Social Studies 500
+37,36,Social Studies 600
+# world languages 4 levels each #
+38,7,German 101
+39,38,German 102
+40,39,German 201
+41,40,German 202
+42,7,Spanish 101
+43,42,Spanish 102
+44,43,Spanish 201
+45,44,Spanish 202
+46,7,French 101
+47,46,French 102
+48,47,French 201
+49,48,French 202
+# Electives #
+# Updating the generate courses to build a large number of generic electives won't work #
+# Will have to do this the painful way #
+# use the content from electivePreReq.csv in this section
+50,7,Elective 1 101
+51,50,Elective 1 102
+52,7,Elective 2 101
+53,52,Elective 2 102
+54,7,Elective 3 101
+55,54,Elective 3 102
+56,7,Elective 4 101
+57,56,Elective 4 102
+58,7,Elective 5 101
+59,58,Elective 5 102
+60,7,Elective 6 101
+61,60,Elective 6 102
+62,7,Elective 7 101
+63,62,Elective 7 102
+64,7,Elective 8 101
+65,64,Elective 8 102

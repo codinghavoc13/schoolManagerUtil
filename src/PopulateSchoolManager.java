@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.Duration;
 import java.time.DayOfWeek;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -26,7 +29,7 @@ public class PopulateSchoolManager {
     /** Number of super administrator accounts to create. */
     private static int NUM_SU = 1;
     /** Number of teacher accounts to create.*/
-    private static int NUM_TEACHERS = 32;
+    private static int NUM_TEACHERS = 86;
     private static LocalDate START_OF_SCHOOL_YEAR = LocalDate.of(2024, 8, 19);
     /** Sum total of super and normal admin and teachers to create. */
     private static int TOTAL_NUM_STAFF = NUM_SU + NUM_ADM + NUM_TEACHERS;
@@ -36,10 +39,18 @@ public class PopulateSchoolManager {
      */
     private static int TOTAL_RECORDS_TO_GENERATE = 600;
 
+    private static LocalDateTime start;
+    private static LocalDateTime stop;
+
     private static Long addressId = 1l;
-    private static Long relationshipId = 1l;
+    // private static Long relationshipId = 1l;
     private static Long userId = 1l;
 
+    private static int ctrAssignments = 0;
+    private static int ctrParents = 0;
+    private static int ctrStaff = 0;
+    private static int ctrStudents = 0;
+    private static int ctrTeachers = 0;
     private static int phoneNumberprefix = 100;
     private static int phoneNumberExchange = 0;
     private static int schoolIdCtr = 1;
@@ -70,6 +81,7 @@ public class PopulateSchoolManager {
     }    
 
     public static void start() {
+        startClock();
         // boolean test = true;
         boolean test = false;
         if (test) {
@@ -83,8 +95,20 @@ public class PopulateSchoolManager {
             generateAssignments();
             generateCourses();
             generateCoursePeriodTeacher();
-            System.out.println("Finished");
         }
+        stopClock();
+    }
+
+    private static void testRunner() {
+        // generateCourses();
+        // readCPTFromFile();
+        // generateCoursePeriodTeacher();
+        // readCoursePreReqsFromFile();
+        // for(CoursePreReqPair cprp : coursePreReqList){
+        //     System.out.println(cprp.courseId + " _ " + cprp.prereqId);
+        // }
+        generateElectives();
+        // generateCoursePreReq();
     }
 
     private static void buildAddressInsertStatement() {
@@ -242,6 +266,7 @@ public class PopulateSchoolManager {
                 grade = "null, ";
                 sb.append(buildIndividualUser(firstName, lastName, grade, role, studentSchoolId));
                 ctr++;
+                ctrStaff++;
                 rl = rand.nextInt(lastNames.size());
             } else if (ctr > 0 && ctr < (NUM_SU + NUM_ADM)) {
                 role = "ADMIN";
@@ -252,6 +277,7 @@ public class PopulateSchoolManager {
                 addressId++;
                 sb.append(buildIndividualUser(firstName, lastName, grade, role, studentSchoolId));
                 ctr++;
+                ctrStaff++;
                 rl = rand.nextInt(lastNames.size());
             } else if (ctr > NUM_ADM && ctr < TOTAL_NUM_STAFF) {
                 role = "TEACHER";
@@ -263,6 +289,7 @@ public class PopulateSchoolManager {
                 teacherIdList.add(userId);
                 sb.append(buildIndividualUser(firstName, lastName, grade, role, studentSchoolId));
                 ctr++;
+                ctrTeachers++;
                 rl = rand.nextInt(lastNames.size());
             } else {
                 /*
@@ -281,6 +308,7 @@ public class PopulateSchoolManager {
                 primaryId = (long) ctr + 1;
                 sb.append(buildIndividualUser(firstName, lastName, grade, role, studentSchoolId));
                 ctr++;
+                ctrParents++;
                 // parent
                 role = "PARENT";
                 parentId = (long) ctr + 1;
@@ -289,6 +317,7 @@ public class PopulateSchoolManager {
                 addressUserList.add(new AddressUserPair(addressId, userId));
                 sb.append(buildIndividualUser(firstName, lastName, grade, role, studentSchoolId));
                 ctr++;
+                ctrParents++;
                 addressId++;
                 /*
                  * Modify this section to create sibling relationships when studentCtr > 1
@@ -310,6 +339,7 @@ public class PopulateSchoolManager {
                     studentCtr--;
                     sb.append(buildIndividualUser(firstName, lastName, grade, role, studentSchoolId));
                     ctr++;
+                    ctrStudents++;
                 }
                 rl = rand.nextInt(lastNames.size());
             }
@@ -387,7 +417,7 @@ public class PopulateSchoolManager {
             // reset the date at the beginning of each run or else the due date gets really
             // far out
             date = START_OF_SCHOOL_YEAR;
-            System.out.println("----------new run----------");
+            // System.out.println("----------new run----------");
             for (int i = 0; i < 60; i++) {
                 switch (date.getDayOfWeek()) {
                     case DayOfWeek.MONDAY:
@@ -405,7 +435,7 @@ public class PopulateSchoolManager {
                     case DayOfWeek.FRIDAY:
                         //TODO add a check to put a report due every 3 weeks (test, test, report)
                         if(i%3==0){
-                            System.out.println("third");
+                            // System.out.println("third");
                             type = "'REPORT', ";
                             title = "'Report " + rptCtr + "', ";
                             rptCtr++;
@@ -428,6 +458,7 @@ public class PopulateSchoolManager {
                     sb.append(title);
                     sb.append(type);
                     sb.append("'" + date.toString() + "'), \n");
+                    ctrAssignments++;
                 }
                 build = true;
                 date = date.plusDays(1);
@@ -534,6 +565,67 @@ public class PopulateSchoolManager {
         }
     }
 
+    private static void generateElectives(){
+        String ELECTIVE_PREFIX = "Elective";
+        int electiveCounter = 1;
+        //update this based on the values in courses.csv
+        int electiveIdCounter = 74;
+        int teacherId = 41;
+        StringBuilder coursesSB = new StringBuilder();
+        StringBuilder prereqSB = new StringBuilder();
+        /*
+         * Need to massively rework this for loop to create an insert statement matching the world languages blocks. For each elective,
+         * for each semester, create an entry for 101 in periods 1, 3 and 5 for 101 and 2, 4 and 6 for 102
+         */
+        for (int i = 0; i < 30; i++){
+            for (int j = 1; j <=6; j++){
+                // coursesSB.append(electiveIdCounter + "," + ELECTIVE_PREFIX + " " + electiveCounter + " 101,0.5,FALL_SEMESTER\n");
+                coursesSB.append(electiveIdCounter + ",");//course id
+                coursesSB.append(j+",");//period
+                coursesSB.append(teacherId+",");//teacher id
+                if(j%2==1){
+                    coursesSB.append(ELECTIVE_PREFIX + " " + electiveCounter + " 101,0.5,FALL_SEMESTER\n");
+                    prereqSB.append(electiveIdCounter + ",7\n");
+                    electiveIdCounter++;
+                } else {
+                    // coursesSB.append(electiveIdCounter + "," + ELECTIVE_PREFIX + " " + electiveCounter + " 102,0.5,SPRING_SEMESTER\n");
+                    // coursesSB.append(electiveIdCounter + ",0,0," + ELECTIVE_PREFIX + " " + electiveCounter + " 102,0.5,SPRING_SEMESTER\n");
+                    coursesSB.append(ELECTIVE_PREFIX + " " + electiveCounter + " 102,0.5,SPRING_SEMESTER\n");
+                    prereqSB.append(electiveIdCounter + "," + (electiveIdCounter - 1) +"\n");
+                    electiveIdCounter++;
+                }
+            }
+            coursesSB.append("\n");
+            electiveCounter++;
+            teacherId++;
+        }
+        for (int i = 0; i < 15; i++){
+            for (int j = 1; j <= 6; j++){
+                // coursesSB.append(electiveIdCounter + "," + ELECTIVE_PREFIX + " " + electiveCounter + " 100,1,FULL_YEAR\n");
+                coursesSB.append(electiveIdCounter + ",");//course id
+                coursesSB.append(j+",");//period
+                coursesSB.append(teacherId+",");//teacher id
+                coursesSB.append(ELECTIVE_PREFIX + " " + electiveCounter + " 101,1,FULL_YEAR\n");
+                prereqSB.append(electiveIdCounter + ",7\n");
+                electiveIdCounter++;
+            }
+            coursesSB.append("\n");
+            electiveCounter++;
+            teacherId++;
+        }
+        FileWriter writer;
+        try {
+            writer = new FileWriter("resources/buildElectives.csv");
+            writer.write(coursesSB.toString());
+            writer.close();
+            writer = new FileWriter("resources/electivePreReq.csv");
+            writer.write(prereqSB.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static String generatePhoneString() {
         StringBuilder sb = new StringBuilder();
         sb.append("720-");
@@ -628,6 +720,7 @@ public class PopulateSchoolManager {
         String line = "";
         String courseName = "";
         double credit;
+        String courseBlock = "";
         try {
             BufferedReader br = new BufferedReader(new FileReader("resources/courses.csv"));
             while((line = br.readLine()) != null){
@@ -636,18 +729,20 @@ public class PopulateSchoolManager {
                     //ignore column 0, this is a id value for reference
                     courseName = arr[1];
                     credit = Double.valueOf(arr[2]);
+                    courseBlock = arr[3];
+                    courses.add(new CourseInfo(courseName, credit, courseBlock));
                     // if(credit == 0.5){
                     //     courses.add(new CourseInfo(courseId++, courseName, credit, "FALL_SEMESTER"));
                     //     courses.add(new CourseInfo(courseId++, courseName, credit, "SPRING_SEMESTER"));
                     // } else {
                     //     courses.add(new CourseInfo(courseId++, courseName, credit, "FULL_YEAR"));
                     // }
-                    if(credit == 0.5){
-                        courses.add(new CourseInfo(courseName, credit, "FALL_SEMESTER"));
-                        courses.add(new CourseInfo(courseName, credit, "SPRING_SEMESTER"));
-                    } else {
-                        courses.add(new CourseInfo(courseName, credit, "FULL_YEAR"));
-                    }
+                    // if(credit == 0.5){
+                    //     courses.add(new CourseInfo(courseName, credit, "FALL_SEMESTER"));
+                    //     courses.add(new CourseInfo(courseName, credit, "SPRING_SEMESTER"));
+                    // } else {
+                    //     courses.add(new CourseInfo(courseName, credit, "FULL_YEAR"));
+                    // }
                 }
             }
             br.close();
@@ -668,6 +763,7 @@ public class PopulateSchoolManager {
                     coursePreReqList.add(new CoursePreReqPair(Long.parseLong(arr[0]), Long.parseLong(arr[1])));
                 }
             }
+            br.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -722,15 +818,38 @@ public class PopulateSchoolManager {
         }
     }
 
-    private static void testRunner() {
-        // generateCourses();
-        // readCPTFromFile();
-        // generateCoursePeriodTeacher();
-        // readCoursePreReqsFromFile();
-        // for(CoursePreReqPair cprp : coursePreReqList){
-        //     System.out.println(cprp.courseId + " _ " + cprp.prereqId);
-        // }
-        generateCoursePreReq();
+    private static void startClock(){
+        start = LocalDateTime.now();
+    }
+
+    private static void stopClock(){
+        stop = LocalDateTime.now();
+        summary();
+    }
+
+    private static void summary(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("------------------Script complete------------------\n");
+        sb.append("----------------------Summary----------------------\n");
+        sb.append("-> Staff created:         " + ctrStaff + "\n");
+        sb.append("-> Teachers generated:    " + ctrTeachers + "\n");
+        sb.append("-> Parents generated:     " + ctrParents + "\n");
+        sb.append("-> Students generated:    " + ctrStudents + "\n");
+        sb.append("-> Assignments generated: " + ctrAssignments + "\n");
+        // sb.append(null);
+        // sb.append(null);
+        // sb.append(null);
+        // sb.append(null);
+        // sb.append(null);
+        sb.append("-> Total run time:        " + calcRunTime() + " seconds\n");
+        sb.append("--------------------End Summary--------------------\n");
+        // sb.append(null);
+        System.out.println(sb.toString());
+    }
+
+    private static String calcRunTime(){
+        Duration duration = Duration.between(start, stop);
+        return duration.getSeconds() + ":" + duration.getNano();
     }
 
     // private static boolean checkUserPairs(UserPair up1, UserPair up2){

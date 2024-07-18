@@ -1,70 +1,173 @@
 #id (reference only) - course_name - credit #
+# need to figure out a plan for adding courses that can be repeated and how to handle credits when
+repeating courses already completed -- example band - choir - library assistant
 # K-6 - 2 teachers each 0-13 #
-1,Kindergarden,-1
-2,1st Grade,-1
-3,2nd Grade,-1
-4,3rd Grade,-1
-5,4th Grade,-1
-6,5th Grade,-1
-7,6th Grade,-1
-8,Homeroom,0
+1,Kindergarden,-1,FULL_YEAR
+2,1st Grade,-1,FULL_YEAR
+3,2nd Grade,-1,FULL_YEAR
+4,3rd Grade,-1,FULL_YEAR
+5,4th Grade,-1,FULL_YEAR
+6,5th Grade,-1,FULL_YEAR
+7,6th Grade,-1,FULL_YEAR
+# splitting up homerooms at different grades unless schools are now having mixed grade level homerooms
+8,Homeroom,0,FULL_YEAR,7th grade
+9,Homeroom,0,FULL_YEAR,8th grade
+10,Homeroom,0,FULL_YEAR,9th grade
+11,Homeroom,0,FULL_YEAR,10th grade
+12,Homeroom,0,FULL_YEAR,11th grade
+13,Homeroom,0,FULL_YEAR,12th grade
 # english 6 levels - 2 teachers each #
-9,English 100,1
-10,English 200,1
-11,English 300,1
-12,English 400,1
-13,nglish 500,1
-14,English 600,1
+14,English 100,1,FULL_YEAR
+15,English 200,1,FULL_YEAR
+16,English 300,1,FULL_YEAR
+17,English 400,1,FULL_YEAR
+18,English 500,1,FULL_YEAR
+19,English 600,1,FULL_YEAR
 # science 6 levels #
-15,Science 100,1
-16,Science 200,1
-17,Science 300,1
-18,Science 400,1
-19,Science 500,1
-20,Science 600,1
+20,Science 100,1,FULL_YEAR
+21,Science 200,1,FULL_YEAR
+22,Science 300,1,FULL_YEAR
+23,Science 400,1,FULL_YEAR
+24,Science 500,1,FULL_YEAR
+25,Science 600,1,FULL_YEAR
 # math 6 levels #
-21,Math 100,1
-22,Math 200,1
-23,Math 300,1
-24,Math 400,1
-25,Math 500,1
-26,Math 600,1
+26,Math 100,1,FULL_YEAR
+27,Math 200,1,FULL_YEAR
+28,Math 300,1,FULL_YEAR
+29,Math 400,1,FULL_YEAR
+30,Math 500,1,FULL_YEAR
+31,Math 600,1,FULL_YEAR
 # social studies 6 levels #
-27,Social Studies 100,1
-28,Social Studies 200,1
-29,Social Studies 300,1
-30,Social Studies 400,1
-31,Social Studies 500,1
-32,Social Studies 600,1
+32,Social Studies 100,1,FULL_YEAR
+33,Social Studies 200,1,FULL_YEAR
+34,Social Studies 300,1,FULL_YEAR
+35,Social Studies 400,1,FULL_YEAR
+36,Social Studies 500,1,FULL_YEAR
+37,Social Studies 600,1,FULL_YEAR
 # world languages 4 levels each #
-33,German 101,0.5
-34,German 102,0.5
-35,German 201,0.5
-36,German 202,0.5
-37,Spanish 101,0.5
-38,Spanish 102,0.5
-39,Spanish 201,0.5
-40,Spanish 202,0.5
-41,French 101,0.5
-42,French 102,0.5
-43,French 201,0.5
-44,French 202,0.5
+38,German 101,0.5,FALL_SEMESTER
+39,German 101,0.5,FALL_SEMESTER
+40,German 101,0.5,FALL_SEMESTER
+
+41,German 102,0.5,SPRING_SEMESTER
+42,German 102,0.5,SPRING_SEMESTER
+43,German 102,0.5,SPRING_SEMESTER
+
+44,German 103,0.5,FALL_SEMESTER
+45,German 103,0.5,FALL_SEMESTER
+46,German 103,0.5,FALL_SEMESTER
+
+47,German 104,0.5,SPRING_SEMESTER
+48,German 104,0.5,SPRING_SEMESTER
+49,German 104,0.5,SPRING_SEMESTER
+
+50,Spanish 101,0.5,FALL_SEMESTER
+51,Spanish 101,0.5,FALL_SEMESTER
+52,Spanish 101,0.5,FALL_SEMESTER
+
+53,Spanish 102,0.5,SPRING_SEMESTER
+54,Spanish 102,0.5,SPRING_SEMESTER
+55,Spanish 102,0.5,SPRING_SEMESTER
+
+56,Spanish 103,0.5,FALL_SEMESTER
+57,Spanish 103,0.5,FALL_SEMESTER
+58,Spanish 103,0.5,FALL_SEMESTER
+
+59,Spanish 104,0.5,SPRING_SEMESTER
+60,Spanish 104,0.5,SPRING_SEMESTER
+61,Spanish 104,0.5,SPRING_SEMESTER
+
+62,French 101,0.5,FALL_SEMESTER
+63,French 101,0.5,FALL_SEMESTER
+64,French 101,0.5,FALL_SEMESTER
+
+65,French 102,0.5,SPRING_SEMESTER
+66,French 102,0.5,SPRING_SEMESTER
+67,French 102,0.5,SPRING_SEMESTER
+
+68,French 103,0.5,FALL_SEMESTER
+69,French 103,0.5,FALL_SEMESTER
+70,French 103,0.5,FALL_SEMESTER
+
+71,French 104,0.5,SPRING_SEMESTER
+72,French 104,0.5,SPRING_SEMESTER
+73,French 104,0.5,SPRING_SEMESTER
 # Electives #
 # Updating the generate courses to build a large number of generic electives won't work #
 # Will have to do this the painful way #
-45,Elective 1 101,0.5
-46,Elective 1 102,0.5
-47,Elective 2 101,0.5
-48,Elective 2 102,0.5
-49,Elective 3 101,0.5
-50,Elective 3 102,0.5
-51,Elective 4 101,0.5
-52,Elective 4 102,0.5
-53,Elective 5 101,0.5
-54,Elective 5 102,0.5
-55,Elective 6 101,0.5
-56,Elective 6 102,0.5
-57,Elective 7 101,0.5
-58,Elective 7 102,0.5
-59,Elective 8 101,0.5
-60,Elective 8 102,0.5
+# Use the generateElectives method to build these out
+74,Elective 1 101,0.5,FALL_SEMESTER
+75,Elective 1 102,0.5,SPRING_SEMESTER
+76,Elective 2 101,0.5,FALL_SEMESTER
+77,Elective 2 102,0.5,SPRING_SEMESTER
+78,Elective 3 101,0.5,FALL_SEMESTER
+79,Elective 3 102,0.5,SPRING_SEMESTER
+80,Elective 4 101,0.5,FALL_SEMESTER
+81,Elective 4 102,0.5,SPRING_SEMESTER
+82,Elective 5 101,0.5,FALL_SEMESTER
+83,Elective 5 102,0.5,SPRING_SEMESTER
+84,Elective 6 101,0.5,FALL_SEMESTER
+85,Elective 6 102,0.5,SPRING_SEMESTER
+86,Elective 7 101,0.5,FALL_SEMESTER
+87,Elective 7 102,0.5,SPRING_SEMESTER
+88,Elective 8 101,0.5,FALL_SEMESTER
+89,Elective 8 102,0.5,SPRING_SEMESTER
+90,Elective 9 101,0.5,FALL_SEMESTER
+91,Elective 9 102,0.5,SPRING_SEMESTER
+92,Elective 10 101,0.5,FALL_SEMESTER
+93,Elective 10 102,0.5,SPRING_SEMESTER
+94,Elective 11 101,0.5,FALL_SEMESTER
+95,Elective 11 102,0.5,SPRING_SEMESTER
+96,Elective 12 101,0.5,FALL_SEMESTER
+97,Elective 12 102,0.5,SPRING_SEMESTER
+98,Elective 13 101,0.5,FALL_SEMESTER
+99,Elective 13 102,0.5,SPRING_SEMESTER
+100,Elective 14 101,0.5,FALL_SEMESTER
+101,Elective 14 102,0.5,SPRING_SEMESTER
+102,Elective 15 101,0.5,FALL_SEMESTER
+103,Elective 15 102,0.5,SPRING_SEMESTER
+104,Elective 16 101,0.5,FALL_SEMESTER
+105,Elective 16 102,0.5,SPRING_SEMESTER
+106,Elective 17 101,0.5,FALL_SEMESTER
+107,Elective 17 102,0.5,SPRING_SEMESTER
+108,Elective 18 101,0.5,FALL_SEMESTER
+109,Elective 18 102,0.5,SPRING_SEMESTER
+110,Elective 19 101,0.5,FALL_SEMESTER
+111,Elective 19 102,0.5,SPRING_SEMESTER
+112,Elective 20 101,0.5,FALL_SEMESTER
+113,Elective 20 102,0.5,SPRING_SEMESTER
+114,Elective 21 101,0.5,FALL_SEMESTER
+115,Elective 21 102,0.5,SPRING_SEMESTER
+116,Elective 22 101,0.5,FALL_SEMESTER
+117,Elective 22 102,0.5,SPRING_SEMESTER
+118,Elective 23 101,0.5,FALL_SEMESTER
+119,Elective 23 102,0.5,SPRING_SEMESTER
+120,Elective 24 101,0.5,FALL_SEMESTER
+121,Elective 24 102,0.5,SPRING_SEMESTER
+122,Elective 25 101,0.5,FALL_SEMESTER
+123,Elective 25 102,0.5,SPRING_SEMESTER
+124,Elective 26 101,0.5,FALL_SEMESTER
+125,Elective 26 102,0.5,SPRING_SEMESTER
+126,Elective 27 101,0.5,FALL_SEMESTER
+127,Elective 27 102,0.5,SPRING_SEMESTER
+128,Elective 28 101,0.5,FALL_SEMESTER
+129,Elective 28 102,0.5,SPRING_SEMESTER
+130,Elective 29 101,0.5,FALL_SEMESTER
+131,Elective 29 102,0.5,SPRING_SEMESTER
+132,Elective 30 101,0.5,FALL_SEMESTER
+133,Elective 30 102,0.5,SPRING_SEMESTER
+134,Elective 31 100,1,FULL_YEAR
+135,Elective 32 100,1,FULL_YEAR
+136,Elective 33 100,1,FULL_YEAR
+137,Elective 34 100,1,FULL_YEAR
+138,Elective 35 100,1,FULL_YEAR
+139,Elective 36 100,1,FULL_YEAR
+140,Elective 37 100,1,FULL_YEAR
+141,Elective 38 100,1,FULL_YEAR
+142,Elective 39 100,1,FULL_YEAR
+143,Elective 40 100,1,FULL_YEAR
+144,Elective 41 100,1,FULL_YEAR
+145,Elective 42 100,1,FULL_YEAR
+146,Elective 43 100,1,FULL_YEAR
+147,Elective 44 100,1,FULL_YEAR
+148,Elective 45 100,1,FULL_YEAR
