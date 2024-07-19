@@ -574,8 +574,7 @@ public class PopulateSchoolManager {
         StringBuilder coursesSB = new StringBuilder();
         StringBuilder prereqSB = new StringBuilder();
         /*
-         * Need to massively rework this for loop to create an insert statement matching the world languages blocks. For each elective,
-         * for each semester, create an entry for 101 in periods 1, 3 and 5 for 101 and 2, 4 and 6 for 102
+         * Need to take a look at this and figure out how to handle semester courses.
          */
         for (int i = 0; i < 30; i++){
             for (int j = 1; j <=6; j++){
