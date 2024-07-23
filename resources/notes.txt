@@ -19,3 +19,16 @@ homeroom in cpt
 11,0,-1
 12,0,-1
 13,0,-1
+
+courses.csv needs to have the unique courses; psm needs to generate the cpt values
+in courses.csv, changes FALL_SEMESTER and SPRING_SEMESTER to just SEMESTER
+from courses.csv, in psm.readCoursesFromFile
+    - k-6 and english, science, math, and social studies are good as is
+    - german/french/spanish need to be reduced to a single instance of each level with psm handling creating the individual courses (this likely means hardcoding the courses in the method and not reading from file); may move/write the logic for this into the psm.generateCourses
+    - when building out electives, may redirect the output and instead of writing to file, store the data in a variable in psm.generateCourses 
+psm.generateElectives is building out the electivePreReq info with courseID (needs to be fixed), period, teacherID, course name, credit, block
+
+new plan:
+- generate courses will start by reading in K-6 from courses.csv using readCoursesFromFile (may rename the file)
+- world languages would be generated in generateCourses
+- electives would then be built and added to the psm.courses list (will require a rework of the generateElectives to change where the data is saved)

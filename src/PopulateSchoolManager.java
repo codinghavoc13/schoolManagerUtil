@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.time.Duration;
 import java.time.DayOfWeek;
 import java.io.BufferedReader;
@@ -94,21 +93,14 @@ public class PopulateSchoolManager {
             buildParentAddressInsertStatement();
             generateAssignments();
             generateCourses();
-            generateCoursePeriodTeacher();
+            //disabling until new course generation method is working
+            // generateCoursePeriodTeacher();
         }
         stopClock();
     }
 
     private static void testRunner() {
-        // generateCourses();
-        // readCPTFromFile();
-        // generateCoursePeriodTeacher();
-        // readCoursePreReqsFromFile();
-        // for(CoursePreReqPair cprp : coursePreReqList){
-        //     System.out.println(cprp.courseId + " _ " + cprp.prereqId);
-        // }
-        generateElectives();
-        // generateCoursePreReq();
+        System.out.println("No methods for testing right now");
     }
 
     private static void buildAddressInsertStatement() {
@@ -172,7 +164,6 @@ public class PopulateSchoolManager {
         sb.append("'" + username + "', ");// username
         sb.append("true, ");// verified
         sb.append("'" + username + "@email.com'),\n");// email_string
-        // incrementUserId();
         userId++;
         return sb.toString();
     }
@@ -396,14 +387,12 @@ public class PopulateSchoolManager {
      */
     private static void generateAssignments() {
         LocalDate date = START_OF_SCHOOL_YEAR;
-        Long assignmentId = 1l;
         StringBuilder sb = new StringBuilder();
         String type = "";
         String title = "";
         int hwCtr = 1;
         int quizCtr = 1;
         int testCtr = 1;
-        //TODO need to add reports
         int rptCtr = 1;
         boolean build = true;
         // INSERT INTO school_manager.assignment(assignment_id, teacher_id,
@@ -417,7 +406,6 @@ public class PopulateSchoolManager {
             // reset the date at the beginning of each run or else the due date gets really
             // far out
             date = START_OF_SCHOOL_YEAR;
-            // System.out.println("----------new run----------");
             for (int i = 0; i < 60; i++) {
                 switch (date.getDayOfWeek()) {
                     case DayOfWeek.MONDAY:
@@ -433,14 +421,11 @@ public class PopulateSchoolManager {
                         quizCtr++;
                         break;
                     case DayOfWeek.FRIDAY:
-                        //TODO add a check to put a report due every 3 weeks (test, test, report)
                         if(i%3==0){
-                            // System.out.println("third");
                             type = "'REPORT', ";
                             title = "'Report " + rptCtr + "', ";
                             rptCtr++;
                         } else {
-                            // System.out.println("not third");
                             type = "'TEST', ";
                             title = "'Test" + " " + testCtr + "', ";
                             testCtr++;
@@ -452,8 +437,6 @@ public class PopulateSchoolManager {
                 }
                 if (build) {
                     sb.append("(");
-                    // sb.append(assignmentId + ", ");
-                    // assignmentId++;
                     sb.append(teacherId + ", ");
                     sb.append(title);
                     sb.append(type);
@@ -485,60 +468,89 @@ public class PopulateSchoolManager {
      */
     private static void generateCourses() {
         readCoursesFromFile();
-        StringBuilder sb = new StringBuilder();
-        // Long courseId = 1l;
+        StringBuilder coursesSb = new StringBuilder();
+        StringBuilder preReqSb = new StringBuilder();
+        String[] electiveGenResults = new String[2];
+        Long courseId = 1l;
         String courseName = "";
         String courseCredit = "";
-        sb.append("INSERT INTO school_manager.course(course_name, credit, course_block) VALUES \n");
+        coursesSb.append("INSERT INTO school_manager.course(course_name, credit, course_block) VALUES \n");
+        preReqSb.append("INSERT INTO school_manager.course_pre_req(course_id, prereq_id) VALUES \n");
         for (CourseInfo courseInfo : courses) {
             courseName = "'" + courseInfo.courseName + "',";
             courseCredit = String.valueOf(courseInfo.credit);
-            sb.append("(");
-            // sb.append(courseId + ", ");
-            // courseId++;
-            sb.append(courseName);
-            sb.append(courseCredit + ", ");
-            
-            sb.append("'" + courseInfo.courseBlock + "'),\n");
+            coursesSb.append("(");
+            coursesSb.append(courseId + ",");
+            coursesSb.append(courseName);
+            // sb.append(courseCredit + ", ");
+            // sb.append("'" + courseInfo.courseBlock + "'),\n");
+            coursesSb.append(courseCredit + ",'FULL_YEAR'),\n");
+            if(courseId == 1){
+                preReqSb.append("(" + courseId + ",-1),\n");
+            } else if (courseId > 7 && courseId % 6 == 2){
+                preReqSb.append("(" + courseId + ",7),\n");
+            } else {
+                preReqSb.append("(" + courseId + "," + (courseId - 1) + "),\n");
+            }
+            courseId++;
         }
 
-        String result = sb.toString();
-        result = result.substring(0, result.lastIndexOf(")") + 1);
+        /*
+         * TODO want to rework this method to 'hard code' the world languages with split semester courses (101 and 103
+         * in the fall, 102 and 204 in the spring) or have the world languages only teach 4 classes per day and have
+         * all four levels available each semester
+         */
+        /*
+         * TODO Need to update enum on backend to include SEMESTER
+         */
+        String[] languages = new String[]{"German","French","Spanish"};
+        String[] levels = new String[]{"101","102","103","104"};
+        for (String language : languages){
+            for(String level : levels){
+                courseName = courseId + ",'" + language + " - " + level + "',";
+                coursesSb.append("(");
+                coursesSb.append(courseName);
+                coursesSb.append("0.5,'SEMESTER'),\n");
+                if(level.equals(levels[0])){
+                    preReqSb.append("(" + courseId + ",7),\n");
+                } else {
+                    preReqSb.append("(" + courseId + "," + ( courseId - 1) + "),\n");
+                }
+                courseId++;
+            }
+        }
+        
+         //pass in the count of how many courses have been generated so far
+        electiveGenResults = generateElectives(courseId);
+        coursesSb.append(electiveGenResults[0]);
+        preReqSb.append(electiveGenResults[1]);
+
+        String coursesResult = coursesSb.toString();
+        coursesResult = coursesResult.substring(0, coursesResult.lastIndexOf(")") + 1);
+        String preReqResult = preReqSb.toString();
+        preReqResult = preReqResult.substring(0, preReqResult.lastIndexOf(")") + 1);
 
         FileWriter writer;
         try {
             writer = new FileWriter("output/insertCourses.sql");
-            writer.write(result);
+            writer.write(coursesResult);
             writer.close();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static void generateCoursePreReq(){
-        // INSERT INTO school_manager.course_pre_req(course_id, prereq_id) VALUES (?, ?, ?);
-        readCoursePreReqsFromFile();
-        StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO school_manager.course_pre_req(course_id, prereq_id) VALUES \n");
-
-        for(CoursePreReqPair cprp : coursePreReqList){
-            sb.append("(" + cprp.courseId + ", ");
-            sb.append(cprp.prereqId + "),\n");
-        }
-
-        String result = sb.toString();
-        result = result.substring(0, result.lastIndexOf(")") + 1);
-
-        FileWriter writer;
         try {
             writer = new FileWriter("output/buildCoursePreReq.sql");
-            writer.write(result);
+            writer.write(preReqResult);
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /*
+     * TODO This needs massive rework
+     */
     private static void generateCoursePeriodTeacher() {
         readCPTFromFile();
         StringBuilder sb = new StringBuilder();
@@ -565,64 +577,29 @@ public class PopulateSchoolManager {
         }
     }
 
-    private static void generateElectives(){
+    private static String[] generateElectives(Long electiveIdCounter){
+        String[] result = new String[2];
         String ELECTIVE_PREFIX = "Elective";
         int electiveCounter = 1;
-        //update this based on the values in courses.csv
-        int electiveIdCounter = 74;
-        int teacherId = 41;
         StringBuilder coursesSB = new StringBuilder();
         StringBuilder prereqSB = new StringBuilder();
-        /*
-         * Need to take a look at this and figure out how to handle semester courses.
-         */
         for (int i = 0; i < 30; i++){
-            for (int j = 1; j <=6; j++){
-                // coursesSB.append(electiveIdCounter + "," + ELECTIVE_PREFIX + " " + electiveCounter + " 101,0.5,FALL_SEMESTER\n");
-                coursesSB.append(electiveIdCounter + ",");//course id
-                coursesSB.append(j+",");//period
-                coursesSB.append(teacherId+",");//teacher id
-                if(j%2==1){
-                    coursesSB.append(ELECTIVE_PREFIX + " " + electiveCounter + " 101,0.5,FALL_SEMESTER\n");
-                    prereqSB.append(electiveIdCounter + ",7\n");
+                    coursesSB.append("(" + electiveIdCounter +",'" + ELECTIVE_PREFIX + " " + electiveCounter + " 101',0.5,'SEMESTER'),\n");
+                    prereqSB.append("(" + electiveIdCounter + ",7),\n");
+                    electiveIdCounter++;coursesSB.append("(" + electiveIdCounter +",'" + ELECTIVE_PREFIX + " " + electiveCounter + " 102',0.5,'SEMESTER'),\n");
+                    prereqSB.append("(" + electiveIdCounter + "," + (electiveIdCounter - 1) +"),\n");
                     electiveIdCounter++;
-                } else {
-                    // coursesSB.append(electiveIdCounter + "," + ELECTIVE_PREFIX + " " + electiveCounter + " 102,0.5,SPRING_SEMESTER\n");
-                    // coursesSB.append(electiveIdCounter + ",0,0," + ELECTIVE_PREFIX + " " + electiveCounter + " 102,0.5,SPRING_SEMESTER\n");
-                    coursesSB.append(ELECTIVE_PREFIX + " " + electiveCounter + " 102,0.5,SPRING_SEMESTER\n");
-                    prereqSB.append(electiveIdCounter + "," + (electiveIdCounter - 1) +"\n");
-                    electiveIdCounter++;
-                }
-            }
-            coursesSB.append("\n");
             electiveCounter++;
-            teacherId++;
         }
         for (int i = 0; i < 15; i++){
-            for (int j = 1; j <= 6; j++){
-                // coursesSB.append(electiveIdCounter + "," + ELECTIVE_PREFIX + " " + electiveCounter + " 100,1,FULL_YEAR\n");
-                coursesSB.append(electiveIdCounter + ",");//course id
-                coursesSB.append(j+",");//period
-                coursesSB.append(teacherId+",");//teacher id
-                coursesSB.append(ELECTIVE_PREFIX + " " + electiveCounter + " 101,1,FULL_YEAR\n");
-                prereqSB.append(electiveIdCounter + ",7\n");
+                coursesSB.append("(" + electiveIdCounter +",'" + ELECTIVE_PREFIX + " " + electiveCounter + " 101',1,'FULL_YEAR'),\n");
+                prereqSB.append("(" + electiveIdCounter + ",7),\n");
                 electiveIdCounter++;
-            }
-            coursesSB.append("\n");
             electiveCounter++;
-            teacherId++;
         }
-        FileWriter writer;
-        try {
-            writer = new FileWriter("resources/buildElectives.csv");
-            writer.write(coursesSB.toString());
-            writer.close();
-            writer = new FileWriter("resources/electivePreReq.csv");
-            writer.write(prereqSB.toString());
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        result[0] = coursesSB.toString();
+        result[1] = prereqSB.toString();
+        return result;
     }
 
     private static String generatePhoneString() {
@@ -715,7 +692,6 @@ public class PopulateSchoolManager {
     }
 
     private static void readCoursesFromFile(){
-        // Long courseId = 1l;
         String line = "";
         String courseName = "";
         double credit;
@@ -730,36 +706,6 @@ public class PopulateSchoolManager {
                     credit = Double.valueOf(arr[2]);
                     courseBlock = arr[3];
                     courses.add(new CourseInfo(courseName, credit, courseBlock));
-                    // if(credit == 0.5){
-                    //     courses.add(new CourseInfo(courseId++, courseName, credit, "FALL_SEMESTER"));
-                    //     courses.add(new CourseInfo(courseId++, courseName, credit, "SPRING_SEMESTER"));
-                    // } else {
-                    //     courses.add(new CourseInfo(courseId++, courseName, credit, "FULL_YEAR"));
-                    // }
-                    // if(credit == 0.5){
-                    //     courses.add(new CourseInfo(courseName, credit, "FALL_SEMESTER"));
-                    //     courses.add(new CourseInfo(courseName, credit, "SPRING_SEMESTER"));
-                    // } else {
-                    //     courses.add(new CourseInfo(courseName, credit, "FULL_YEAR"));
-                    // }
-                }
-            }
-            br.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void readCoursePreReqsFromFile(){
-        String line = "";
-        try {
-            BufferedReader br = new BufferedReader(new FileReader("resources/coursePreReq.csv"));
-            while((line = br.readLine()) != null){
-                if(line.indexOf(",")> -1){
-                    String[] arr = line.split(",");
-                    coursePreReqList.add(new CoursePreReqPair(Long.parseLong(arr[0]), Long.parseLong(arr[1])));
                 }
             }
             br.close();
@@ -771,15 +717,17 @@ public class PopulateSchoolManager {
     }
 
     private static void readCPTFromFile(){
-        // int courseId = 1;
+        /*
+         * Need to make changes to the backend to include a column to track full year vs
+         * fall or spring semester
+         */
         String line = "";
         try {
             BufferedReader br = new BufferedReader(new FileReader("resources/cpt.csv"));
             while((line = br.readLine()) != null){
                 if(line.indexOf(",") > -1){
                     String[] arr = line.split(",");
-                    // cptList.add(new CPTInfo(courseId++, Integer.parseInt(arr[0]),
-                    // Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
+                    // public record CPTInfo(int courseId, int period, int teacherId){}
                     cptList.add(new CPTInfo(Integer.parseInt(arr[0]),
                     Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
                 }
@@ -836,13 +784,8 @@ public class PopulateSchoolManager {
         sb.append("-> Students generated:    " + ctrStudents + "\n");
         sb.append("-> Assignments generated: " + ctrAssignments + "\n");
         // sb.append(null);
-        // sb.append(null);
-        // sb.append(null);
-        // sb.append(null);
-        // sb.append(null);
         sb.append("-> Total run time:        " + calcRunTime() + " seconds\n");
         sb.append("--------------------End Summary--------------------\n");
-        // sb.append(null);
         System.out.println(sb.toString());
     }
 
@@ -850,10 +793,4 @@ public class PopulateSchoolManager {
         Duration duration = Duration.between(start, stop);
         return duration.getSeconds() + ":" + duration.getNano();
     }
-
-    // private static boolean checkUserPairs(UserPair up1, UserPair up2){
-    // if((up1.user1 == up2.user1 && up1.user2 == up2.user2) || (up1.user1 ==
-    // up2.user2 && up1.user2 == up2.user1)) return false;
-    // else return true;
-    // }
 }

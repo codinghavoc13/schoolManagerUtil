@@ -1,4 +1,5 @@
 course_id prereq_id comment that is ignored by script
+# Need to rebuild this file using new data
 1,-1,kindergarden
 2,1,1st
 3,2,2nd
