@@ -19,7 +19,7 @@ public class PopulateSchoolManager {
     public record CourseInfo(String courseName, double credit, String courseBlock) {}
     public record CoursePreReqPair(Long courseId, Long prereqId){}
     // public record CPTInfo(int cptId, int courseId, int period, int teacherId){}
-    public record CPTInfo(int courseId, int period, int teacherId){}
+    public record CPTInfo(int courseId, int period, int teacherId, String block){}
     public record ParentStudentPair(Long parent_id, Long student_id, String relation) {}
     public record UserPair(Long user1, Long user2) {}
 
@@ -28,7 +28,7 @@ public class PopulateSchoolManager {
     /** Number of super administrator accounts to create. */
     private static int NUM_SU = 1;
     /** Number of teacher accounts to create.*/
-    private static int NUM_TEACHERS = 86;
+    private static int NUM_TEACHERS = 81;
     private static LocalDate START_OF_SCHOOL_YEAR = LocalDate.of(2024, 8, 19);
     /** Sum total of super and normal admin and teachers to create. */
     private static int TOTAL_NUM_STAFF = NUM_SU + NUM_ADM + NUM_TEACHERS;
@@ -81,8 +81,8 @@ public class PopulateSchoolManager {
 
     public static void start() {
         startClock();
-        // boolean test = true;
-        boolean test = false;
+        boolean test = true;
+        // boolean test = false;
         if (test) {
             testRunner();
         } else {
@@ -93,14 +93,14 @@ public class PopulateSchoolManager {
             buildParentAddressInsertStatement();
             generateAssignments();
             generateCourses();
-            //disabling until new course generation method is working
-            // generateCoursePeriodTeacher();
+            generateCoursePeriodTeacher();
         }
         stopClock();
     }
 
     private static void testRunner() {
-        System.out.println("No methods for testing right now");
+        // System.out.println("No methods for testing right now");
+        generateHomerooms(8L, 38L, 21L);
     }
 
     private static void buildAddressInsertStatement() {
@@ -494,12 +494,6 @@ public class PopulateSchoolManager {
             }
             courseId++;
         }
-
-        /*
-         * TODO want to rework this method to 'hard code' the world languages with split semester courses (101 and 103
-         * in the fall, 102 and 204 in the spring) or have the world languages only teach 4 classes per day and have
-         * all four levels available each semester
-         */
         /*
          * TODO Need to update enum on backend to include SEMESTER
          */
@@ -556,13 +550,14 @@ public class PopulateSchoolManager {
         StringBuilder sb = new StringBuilder();
         // INSERT INTO school_manager.course_period_teacher(ct_id, course_id, period, teacher_id) VALUES (?, ?, ?, ?);
         // sb.append("INSERT INTO school_manager.course_period_teacher(cpt_id, course_id, period, teacher_id) VALUES \n");
-        sb.append("INSERT INTO school_manager.course_period_teacher(course_id, period, teacher_id) VALUES \n");
+        sb.append("INSERT INTO school_manager.course_period_teacher(course_id, period, teacher_id, block) VALUES \n");
         for(CPTInfo cpt : cptList){
             // sb.append("(" + cpt.cptId + ", ");
             sb.append("(");
-            sb.append(cpt.courseId + ", ");
-            sb.append(cpt.period + ", ");
-            sb.append(teacherIdList.get(cpt.teacherId) + "), \n");
+            sb.append(cpt.courseId + ",");
+            sb.append(cpt.period + ",");
+            sb.append(teacherIdList.get(cpt.teacherId) + ",");
+            sb.append(cpt.block + "),\n");
         }
         String result = sb.toString();
         result = result.substring(0, result.lastIndexOf(")") + 1);
@@ -600,6 +595,92 @@ public class PopulateSchoolManager {
         result[0] = coursesSB.toString();
         result[1] = prereqSB.toString();
         return result;
+    }
+
+    private static void generateElectivesCPT(Long courseId, Long teacherId){
+        StringBuilder sb = new StringBuilder();
+        int ctr = 0;
+        String block;
+        for(int i = 1; i <= 30; i++){
+            for(int j = 1; j <= 6; j++){
+                block = ctr%2==0 ? "101": "102";
+                sb.append(courseId+","+j+","+teacherId+",0.5,FALL_SEMESTER,Elective "+(i)+ " " + block + "\n");
+                sb.append(courseId+","+j+","+teacherId+",0.5,SPRING_SEMESTER,Elective "+(i)+ " " + block + "\n");
+                ctr++;
+            }
+            sb.append("\n");
+            courseId++;
+            teacherId++;
+        }
+
+        for(int i = 1; i <= 10; i++){
+            for (int j = 1; j <=6; j++){
+                sb.append(courseId + "," + j + "," + teacherId + ",1,FULL_YEAR,Elective " + (i + 30) + " 100\n");
+            }
+            sb.append("\n");
+            courseId++;
+            teacherId++;
+        }
+
+        FileWriter writer;
+        try {
+            writer = new FileWriter("resources/buildElectives2.csv");
+            writer.write(sb.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void generateHomerooms(Long courseId, Long electiveStart, Long teacherId){
+        StringBuilder sb = new StringBuilder();
+        /*
+         * 14-37: english, science, math, social studies 100-600
+         */
+        for(int i = 0; i < 24; i++){
+            sb.append("(" + courseId + ",0," + teacherId +")\n");
+            courseId++;
+            if(courseId > 13) courseId = 8L;
+            teacherId++;
+        }
+
+        FileWriter writer;
+        try {
+            writer = new FileWriter("resources/buildHomerooms.csv");
+            writer.write(sb.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void generateLanguageCPT(Long courseId, Long teacherId){
+        String[] languages = new String[]{"German","French","Spanish"};
+        String[] levels = new String[]{"101","102","103","104"};
+        int period = 2;
+        StringBuilder sb = new StringBuilder();
+        for(String language : languages){
+            period = 2;
+            for(String level : levels){
+                sb.append(courseId + "," + period + "," + teacherId + ",0.5,FALL_SEMESTER," 
+                    + language + " " + level + "\n");
+                sb.append(courseId + "," + period + "," + teacherId + ",0.5,SPRING_SEMESTER," 
+                    + language + " " + level + "\n");
+                period++;
+                courseId++;
+            }
+            teacherId++;
+            sb.append("\n");
+        }
+
+        FileWriter writer;
+        try {
+            writer = new FileWriter("resources/buildLanguages.csv");
+            writer.write(sb.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String generatePhoneString() {
@@ -729,7 +810,7 @@ public class PopulateSchoolManager {
                     String[] arr = line.split(",");
                     // public record CPTInfo(int courseId, int period, int teacherId){}
                     cptList.add(new CPTInfo(Integer.parseInt(arr[0]),
-                    Integer.parseInt(arr[1]), Integer.parseInt(arr[2])));
+                    Integer.parseInt(arr[1]), Integer.parseInt(arr[2]),arr[4]));
                 }
             }
             br.close();
